@@ -15,6 +15,6 @@ def add_b64(left : Union[List[str], None], right : Union[List[str], None]) -> Li
 
 
 class MultiState(AgentState):
-    """State of multimodal agent, inherits from AgentState <- gets messages and remaining steps keys"""
+    """State of multimodal agent, inherits from AgentState, so it gets `messages` and `remaining_steps` keys for free"""
     images : Annotated[List[str], add_b64]
     audios : Annotated[List[str], add_b64]
