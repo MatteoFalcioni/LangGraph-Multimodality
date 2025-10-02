@@ -33,17 +33,17 @@ coding_agent = create_react_agent(
 # next we could make it supervised (so agents can go back ot supervisors) 
 # or we could make them talk to one another. And eventually report to supervisor even.
 
-def router(state: MultiState) -> Command[Literal["vision", "coding"]]:
+def router(state: MultiState) -> Command[Literal["multimodal_agent", "coding_agent"]]:
     """
-    Route to appropriate agent based on media presence
+    Route to appropriate agent based on media presence (multimodal or coding)
     """
     has_images = bool(state.get("images"))
     has_audios = bool(state.get("audios"))
 
     if has_images or has_audios:
-        goto = "vision"
+        goto = "multimodal_agent"
     else: 
-        goto = "coding"
+        goto = "coding_agent"
     
     return Command(goto=goto)
 
@@ -86,3 +86,33 @@ async def coding_agent(state: MultiState) -> Command[Literal[END]]:
         },
         goto=END
     )
+
+def get_builder(checkpointer) -> StateGraph:
+    """
+    Get the builder for the graph
+    """
+    builder = StateGraph(MultiState)
+    # nodes
+    builder.add_node("router", router)
+    builder.add_node("multimodal_agent", multimodal_agent)
+    builder.add_node("coding_agent", coding_agent)
+    # edges
+    builder.add_edge(START, "router")
+    # no need for conditional edges, router uses Command(goto=...)
+
+    graph = builder.compile(checkpointer=checkpointer)
+
+    # save the graph display to file
+    img = graph.get_graph().draw_mermaid_png() # returns bytes
+    # save the bytes to file 
+    with open("./src/graph.png", "wb") as f:
+        f.write(img)
+    print("Graph display saved to ./src/graph.png")
+
+    return graph
+
+if __name__ == "__main__":
+    checkpointer = InMemorySaver()
+    graph = get_builder(checkpointer)
+
+
